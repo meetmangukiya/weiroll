@@ -30,7 +30,7 @@ jobs:
 
       - name: Run Forge tests
         run: |
-          forge test -vvv --fork-url ${{ secrets.RPC_URL }}
+          forge test -vvv
         id: test
   sdk_check:
     strategy:
