@@ -1,25 +1,50 @@
-name: Test
+name: test
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+on: push
+
+env:
+  FOUNDRY_PROFILE: ci
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
+  check:
     strategy:
-      matrix:
-        node-version: [15.x]
+      fail-fast: true
 
+    name: Foundry project
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+      - uses: actions/checkout@v4
         with:
-          node-version: ${{ matrix.node-version }}
-      - run: npm install
-      - run: npm run test
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Run Forge build
+        run: |
+          forge --version
+          forge build --sizes
+        id: build
+
+      - name: Run Forge tests
+        run: |
+          forge test -vvv --fork-url ${{ secrets.RPC_URL }}
+        id: test
+  sdk_check:
+    strategy:
+      fail-fast: true
+    name: SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: latest
+          cache: yarn
+          cache-dependency-path: yarn.lock
+      - name: Install dependencies
+        run: yarn
+      - name: Build
+        run: yarn build
